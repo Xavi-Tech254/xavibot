@@ -11,9 +11,9 @@ const {
   DisconnectReason,
   useMultiFileAuthState,
   fetchLatestBaileysVersion,
-  makeInMemoryStore,
-  jidDecode,
-  proto,
+
+
+
   getContentType,
 } = require("@whiskeysockets/baileys");
 
@@ -22,8 +22,8 @@ const pino = require("pino");
 const NodeCache = require("node-cache");
 const { db } = require("./firebase");
 const { FieldValue } = require("firebase-admin/firestore");
-const fs = require("fs");
-const path = require("path");
+
+
 
 // ── In-memory session store ──────────────────────────────────
 // Tracks conversation state per user (e.g., awaiting username, email)
@@ -33,9 +33,6 @@ const sessions = {};
 const msgRetryCounterCache = new NodeCache();
 
 // ── In-memory store for message history ─────────────────────
-const store = makeInMemoryStore({
-  logger: pino().child({ level: "silent", stream: "store" }),
-});
 
 // ── Logger (silent for clean output) ────────────────────────
 const logger = pino({ level: "silent" });
@@ -1005,7 +1002,6 @@ async function startBot() {
   });
 
   // Bind store
-  store?.bind(sock.ev);
 
   // ── QR Code ─────────────────────────────────────────────────
   sock.ev.on("connection.update", async (update) => {
