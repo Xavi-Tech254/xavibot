@@ -1,0 +1,29 @@
+{
+  "name": "xavi-assistant",
+  "version": "1.0.0",
+  "description": "Xavi Assistant - WhatsApp Business Automation SaaS",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js",
+    "dev": "nodemon bot.js"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.7.9",
+    "firebase-admin": "^12.0.0",
+    "qrcode-terminal": "^0.12.0",
+    "pino": "^8.19.0",
+    "sharp": "^0.33.3",
+    "jimp": "^0.22.12",
+    "axios": "^1.6.8",
+    "dotenv": "^16.4.5",
+    "node-cache": "^5.1.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "author": "Xavi Tech",
+  "license": "MIT"
+}
