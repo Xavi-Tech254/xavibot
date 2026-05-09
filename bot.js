@@ -984,17 +984,19 @@ function listenForDeliveries(sock) {
 async function startBot() {
   console.log("🚀 Starting Xavi Assistant Bot...");
 
-  // ── Clear old auth session to avoid login loops ──────────
+  // Force clear old auth every time
   const fs = require("fs");
-  if (fs.existsSync("auth_info_baileys")) {
-    fs.rmSync("auth_info_baileys", { recursive: true });
+  const authFolder = "auth_info_baileys";
+  if (fs.existsSync(authFolder)) {
+    fs.rmSync(authFolder, { recursive: true, force: true });
     console.log("🗑️ Cleared old auth session");
   }
+  fs.mkdirSync(authFolder, { recursive: true });
 
-  const { version, isLatest } = await fetchLatestBaileysVersion();
-  console.log(`📱 Baileys version: ${version.join(".")}${isLatest ? " (latest)" : ""}`);
+  const { version } = await fetchLatestBaileysVersion();
+  console.log(`📱 Baileys version: ${version.join(".")}`);
 
-  const { state, saveCreds } = await useMultiFileAuthState("auth_info_baileys");
+  const { state, saveCreds } = await useMultiFileAuthState(authFolder);
 
   const sock = makeWASocket({
     version,
@@ -1006,55 +1008,45 @@ async function startBot() {
     browser: ["Ubuntu", "Chrome", "20.0.04"],
   });
 
-  // Request pairing code only if not already registered
-  if (!sock.authState.creds.registered) {
-    const phoneNumber = (process.env.OWNER_NUMBER || "254743810633").replace(/[^0-9]/g, "");
+  // Request pairing code
+  const phoneNumber = (process.env.OWNER_NUMBER || "254743810633").replace(/[^0-9]/g, "");
 
-    console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    console.log("📱 REQUESTING PAIRING CODE...");
-    console.log(`📞 For number: +${phoneNumber}`);
-    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+  await new Promise(r => setTimeout(r, 5000));
 
-    await new Promise(r => setTimeout(r, 5000));
+  try {
+    const code = await sock.requestPairingCode(phoneNumber);
+    const formatted = code?.match(/.{1,4}/g)?.join("-") || code;
 
-    try {
-      const code = await sock.requestPairingCode(phoneNumber);
-      const formatted = code?.match(/.{1,4}/g)?.join("-") || code;
-
+    // Show code every 5 seconds so you never miss it
+    let count = 0;
+    const interval = setInterval(() => {
+      count++;
       console.log("\n🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑");
       console.log(`YOUR PAIRING CODE: ${formatted}`);
-      console.log("⏰ YOU HAVE 60 SECONDS TO ENTER THIS CODE!");
-      console.log("🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑");
-      console.log("\nSTEPS:");
-      console.log("1. Open WhatsApp NOW");
-      console.log("2. Tap 3 dots → Linked Devices");
-      console.log("3. Link a Device");
-      console.log("4. Tap 'Link with phone number instead'");
-      console.log(`5. Enter: +${phoneNumber}`);
-      console.log(`6. Enter code: ${formatted}`);
-      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
-    } catch (e) {
-      console.error("Pairing code error:", e.message);
-      setTimeout(startBot, 5000);
-      return;
-    }
+      console.log(`📞 For WhatsApp number: +${phoneNumber}`);
+      console.log("🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑\n");
+      if (count >= 10) clearInterval(interval); // stop after 50 seconds
+    }, 5000);
+
+  } catch (e) {
+    console.error("❌ Pairing code error:", e.message);
+    setTimeout(startBot, 5000);
+    return;
   }
 
   sock.ev.on("connection.update", async (update) => {
     const { connection, lastDisconnect, qr } = update;
 
     if (qr) {
-      console.log("⚠️  QR appeared - pairing code may have failed.");
-      console.log("👉 Restart the service to get a fresh pairing code");
+      console.log("⚠️ QR appeared — waiting for pairing code to be entered");
     }
 
     if (connection === "close") {
       const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
       console.log("⚠️ Connection closed | Reconnecting:", shouldReconnect);
-      if (shouldReconnect) {
-        setTimeout(startBot, 3000);
-      } else {
-        console.log("❌ Logged out. Redeploying to get new pairing code...");
+      if (shouldReconnect) setTimeout(startBot, 3000);
+      else {
+        console.log("🔄 Session ended — restarting to get new pairing code...");
         setTimeout(startBot, 3000);
       }
     }
