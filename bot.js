@@ -984,6 +984,13 @@ function listenForDeliveries(sock) {
 async function startBot() {
   console.log("🚀 Starting Xavi Assistant Bot...");
 
+  // ── Clear old auth session to avoid login loops ──────────
+  const fs = require("fs");
+  if (fs.existsSync("auth_info_baileys")) {
+    fs.rmSync("auth_info_baileys", { recursive: true });
+    console.log("🗑️ Cleared old auth session");
+  }
+
   const { version, isLatest } = await fetchLatestBaileysVersion();
   console.log(`📱 Baileys version: ${version.join(".")}${isLatest ? " (latest)" : ""}`);
 
@@ -1016,9 +1023,10 @@ async function startBot() {
 
       console.log("\n🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑");
       console.log(`YOUR PAIRING CODE: ${formatted}`);
+      console.log("⏰ YOU HAVE 60 SECONDS TO ENTER THIS CODE!");
       console.log("🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑");
       console.log("\nSTEPS:");
-      console.log("1. Open WhatsApp");
+      console.log("1. Open WhatsApp NOW");
       console.log("2. Tap 3 dots → Linked Devices");
       console.log("3. Link a Device");
       console.log("4. Tap 'Link with phone number instead'");
@@ -1037,16 +1045,20 @@ async function startBot() {
 
     if (qr) {
       console.log("⚠️  QR appeared - pairing code may have failed.");
-      console.log("👉 Check logs above for YOUR PAIRING CODE");
-      console.log("👉 Or restart service to get a fresh pairing code");
+      console.log("👉 Restart the service to get a fresh pairing code");
     }
 
     if (connection === "close") {
       const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
       console.log("⚠️ Connection closed | Reconnecting:", shouldReconnect);
-      if (shouldReconnect) setTimeout(startBot, 3000);
-      else console.log("❌ Logged out. Restart service for new pairing code.");
+      if (shouldReconnect) {
+        setTimeout(startBot, 3000);
+      } else {
+        console.log("❌ Logged out. Redeploying to get new pairing code...");
+        setTimeout(startBot, 3000);
+      }
     }
+
     if (connection === "open") {
       console.log("✅ Xavi Assistant is ONLINE! 🚀");
       listenForDeliveries(sock);
