@@ -1,0 +1,37 @@
+{
+  "name": "Eclipse MD",
+  "description": "A powerful multi-device WhatsApp bot built with Node.js and Docker — includes AI support, automation, and 600+ commands.",
+  "repository": "https://github.com/horlapookie/Eclipse-MD",
+  "logo": "https://files.catbox.moe/kzxnt4.png",
+  "keywords": ["Eclipse-md"],
+  "website": "https://github.com/horlapookie/Eclipse-MD",
+  "stack": "container",
+  "env": {
+    "NODE_ENV": {
+      "description": "Set the environment to production",
+      "value": "production"
+    },
+    "BOT_PREFIX": {
+      "description": "Command prefix (default: .)",
+      "required": false
+    },
+    "BOT_NUMBER": {
+      "description": "Your WhatsApp number without + or country code",
+      "required": true
+    },
+    "BOT_SESSION_DATA": {
+      "description": "Session ID",
+      "required": true
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "free"
+    }
+  },
+  "addons": [],
+  "scripts": {
+    "postdeploy": "echo \"✅ Eclipse MD Bot has been successfully deployed!\""
+  }
+}

@@ -1,0 +1,10 @@
+services:
+  eclipse-md:
+    build:
+      dockerfilePath: Dockerfile
+    deploy:
+      numReplicas: 1
+      sleep: false
+    env:
+      NODE_ENV: production
+      BOT_PREFIX: "."
